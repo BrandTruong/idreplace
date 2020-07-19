@@ -1,0 +1,11 @@
+Usage: idreplace [OPTION]...
+Checks directory for files containing UID, then creates a tarball of affected files with UID removed
+
+With no OPTION, runs idreplace
+
+      --help     display this help and exit
+      --version  output version information and exit
+
+Examples:
+  idreplace --help	this menu
+  idreplace 		runs command

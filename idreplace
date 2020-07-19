@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#By Brandon Truong
+#I'm tired
+
+#-------------------------------------------#
+#Supporting Functions#
+
+#Checks if valid directory 1/invalid 0
+validStartDirectory() {
+    if [ -e "$1" ]; then
+        if [ ! -d "$1" ]; then
+            echo "Starting Directory is not valid" 1>&2
+            exit 1
+        else
+            return 1
+        fi
+        #No directory/file with that name
+    else
+        echo "Directory: $1 doesn't exist" 1>&2
+        exit 1
+    fi
+}
+
+Help() {
+    echo "$(<help.txt)"
+}
+Version() {
+    #Is this code ugly? Yes
+    echo "$(<version.txt)"
+}
+
+#-------------------------------------------#
+#implementation#
+UIDCheck() {
+    echo "Enter in UID and press Enter"
+    read uid
+    echo "Enter in directory ('.' for current)"
+    read dir
+    if [ $dir == "." ]; then
+        dir=`pwd`
+    fi
+    validStartDirectory "$dir"
+    tmpdir=$(mktemp -d) || exit 1
+    recursive $dir $uid $tmpdir
+    tar -cf files.tar $tmpdir 2>/dev/null
+    rm -r $tmpdir
+    exit 0
+}
+
+recursive() {
+    DataList=`find "$1" -maxdepth 1 -mindepth 1 -printf "%f\n" | sort -u`
+    Field_Separator=$IFS
+    #Find list of directories inside with newlines separating them
+    IFS=$'\n'
+    for val in $DataList;
+    do
+	name="$1/$val"
+	if [ -r "$name" ] && [ -d "$name" ]; then
+        mkdir "$3/$val"
+	    recursive $name $2 "$3/$val"
+        continue;
+    elif [ -f "$name" ]; then
+        x=`echo "$(<$name)" | grep -c "$2"`
+        if [ $x -gt 0 ]; then
+            sed "s/$2//g" $name > "$3/$val"
+        fi
+	fi
+    done	                 
+}
+#-------------------------------------------#
+#main#
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    Help
+elif [ "$1" == "-v" ] || [ "$1" == "--version" ]; then
+    Version
+elif [ $# -gt 0 ]; then
+    echo -e "Command does not accept additional arguments\nTry idremove --help for more information." 1>&2
+    exit 1
+else
+    UIDCheck
+fi
